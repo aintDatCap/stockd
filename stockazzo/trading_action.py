@@ -1,6 +1,7 @@
 from enum import Enum
 from decimal import Decimal
 from stockholm import Money
+from utils import to_money
 
 
 class ActionType(Enum):
@@ -9,33 +10,29 @@ class ActionType(Enum):
 
 
 class TradingAction:
-    def __init__(self, price_per_stock: int | float | str | Decimal | Money,
+    def __init__(self, symbol: str, price_per_stock: int | float | str | Decimal | Money,
                  possessed_quantity: int | float | str | Decimal | Money,
                  action_type: str | ActionType, leverage: int | float | str | Decimal | Money):
 
-        self.price_per_stock = self.__to_money(price_per_stock)
+        self.symbol = symbol
+
+        self.price_per_stock = to_money(price_per_stock)
 
         if self.price_per_stock <= 0:
             raise ValueError(
                 f"The price_per_stock should be higher than zero.\nProvided price_per_stock: {self.price_per_stock}")
 
-        self.possessed_quantity = self.__to_money(possessed_quantity)
+        self.possessed_quantity = to_money(possessed_quantity)
 
         self.action_type = ActionType(action_type)
 
-        self.leverage = self.__to_money(leverage)
+        self.leverage = to_money(leverage)
 
         if self.leverage < 1:
             raise ValueError(f"The leverage should be equal or higher than one.\nProvided leverage: {self.leverage}")
 
-    @staticmethod
-    def __to_money(value) -> Money:
-        if not isinstance(value, Money):
-            return Money(value)
-        return value
-
     def get_profit_or_loss(self, new_price_per_stock: int | float | str | Decimal | Money) -> Money:
-        new_price_per_stock = self.__to_money(new_price_per_stock)
+        new_price_per_stock = to_money(new_price_per_stock)
 
         if self.action_type == ActionType.BUY:
             return (new_price_per_stock - self.price_per_stock) * self.possessed_quantity * self.leverage
@@ -43,9 +40,7 @@ class TradingAction:
             return (self.price_per_stock - new_price_per_stock) * self.possessed_quantity * self.leverage
 
     def get_profit_or_loss_percentage(self, new_price_per_stock: int | float | str | Decimal | Money) -> Money:
-        pl = self.get_profit_or_loss(new_price_per_stock)
-
-        return pl / self.price_per_stock
+        return (self.price_per_stock - new_price_per_stock) * self.leverage / self.price_per_stock
 
     def to_dict(self):
         return {
@@ -54,3 +49,12 @@ class TradingAction:
             "action_type": self.action_type.value,
             "leverage": str(self.leverage)
         }
+
+    def to_model_array(self) -> list[float]:
+        return [
+            float(ord(self.symbol)),
+            float(self.price_per_stock),
+            float(self.possessed_quantity),
+            1.0 if self.action_type == ActionType.BUY else 0.0,
+            float(self.leverage)
+        ]
