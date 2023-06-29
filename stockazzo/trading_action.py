@@ -9,8 +9,9 @@ class ActionType(Enum):
 
 
 class TradingAction:
-    def __init__(self, price_per_stock: int | float | str | Decimal, possessed_quantity: int | float | str | Decimal,
-                 action_type: str | ActionType, leverage: int | float | str | Decimal):
+    def __init__(self, price_per_stock: int | float | str | Decimal | Money,
+                 possessed_quantity: int | float | str | Decimal | Money,
+                 action_type: str | ActionType, leverage: int | float | str | Decimal | Money):
 
         self.price_per_stock = self.__to_money(price_per_stock)
 
@@ -33,7 +34,7 @@ class TradingAction:
             return Money(value)
         return value
 
-    def get_profit_or_loss(self, new_price_per_stock: int | float | str | Decimal) -> Money:
+    def get_profit_or_loss(self, new_price_per_stock: int | float | str | Decimal | Money) -> Money:
         new_price_per_stock = self.__to_money(new_price_per_stock)
 
         if self.action_type == ActionType.BUY:
@@ -41,7 +42,7 @@ class TradingAction:
         else:
             return (self.price_per_stock - new_price_per_stock) * self.possessed_quantity * self.leverage
 
-    def get_profit_or_loss_percentage(self, new_price_per_stock: int | float | str | Decimal) -> Money:
+    def get_profit_or_loss_percentage(self, new_price_per_stock: int | float | str | Decimal | Money) -> Money:
         pl = self.get_profit_or_loss(new_price_per_stock)
 
         return pl / self.price_per_stock
