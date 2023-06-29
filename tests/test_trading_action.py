@@ -8,7 +8,7 @@ class TestTradingAction(unittest.TestCase):
         action = TradingAction("204.64", 2.6, "sell", 1)
 
         pl = action.get_profit_or_loss("208.5")
-        self.assertAlmostEqual(pl, Decimal("-10.036"))
+        self.assertEqual(pl, Decimal("-10.036"))
 
 
 if __name__ == '__main__':
