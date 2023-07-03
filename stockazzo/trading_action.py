@@ -11,7 +11,7 @@ class ActionType(Enum):
 
 class TradingAction:
     def __init__(self, symbol: str, price_per_stock: int | float | str | Decimal | Money,
-                 possessed_quantity: int | float | str | Decimal | Money,
+                 quantity: int | float | str | Decimal | Money,
                  action_type: str | ActionType, leverage: int | float | str | Decimal | Money):
 
         self.symbol = symbol
@@ -22,7 +22,7 @@ class TradingAction:
             raise ValueError(
                 f"The price_per_stock should be higher than zero.\nProvided price_per_stock: {self.price_per_stock}")
 
-        self.possessed_quantity = to_money(possessed_quantity)
+        self.quantity = to_money(quantity)
 
         self.action_type = ActionType(action_type)
 
@@ -35,9 +35,9 @@ class TradingAction:
         new_price_per_stock = to_money(new_price_per_stock)
 
         if self.action_type == ActionType.BUY:
-            return (new_price_per_stock - self.price_per_stock) * self.possessed_quantity * self.leverage
+            return (new_price_per_stock - self.price_per_stock) * self.quantity * self.leverage
         else:
-            return (self.price_per_stock - new_price_per_stock) * self.possessed_quantity * self.leverage
+            return (self.price_per_stock - new_price_per_stock) * self.quantity * self.leverage
 
     def get_profit_or_loss_percentage(self, new_price_per_stock: int | float | str | Decimal | Money) -> Money:
         return (self.price_per_stock - new_price_per_stock) * self.leverage / self.price_per_stock
@@ -45,7 +45,7 @@ class TradingAction:
     def to_dict(self):
         return {
             "price_per_stock": str(self.price_per_stock),
-            "stock_quantity": str(self.possessed_quantity),
+            "stock_quantity": str(self.quantity),
             "action_type": self.action_type.value,
             "leverage": str(self.leverage)
         }
@@ -54,7 +54,7 @@ class TradingAction:
         return [
             float(ord(self.symbol)),
             float(self.price_per_stock),
-            float(self.possessed_quantity),
+            float(self.quantity),
             1.0 if self.action_type == ActionType.BUY else 0.0,
             float(self.leverage)
         ]
