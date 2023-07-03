@@ -1,8 +1,10 @@
+import os.path
 from decimal import Decimal
 from random import randrange
 
 import gymnasium as gym
 import pandas as pd
+import numpy as np
 from gymnasium.envs.registration import register
 from stockholm import Money
 
@@ -26,14 +28,17 @@ class TradingEnvironment(gym.Env):
 
         self.__current_dataset: pd.DataFrame
 
-        self.__next_dataset()
-
         self.__row_index = 0
 
         self.__rewards: list[float] = []
 
+        self.__callback = np.zeros(3)
+
+        self.__current_dataset_path = ""
+
     def __next_dataset(self):
-        self.__current_dataset = pd.read_csv(self.__dataset_paths.pop(randrange(len(self.__dataset_paths))))
+        self.__current_dataset_path = self.__dataset_paths.pop(randrange(len(self.__dataset_paths)))
+        self.__current_dataset = pd.read_csv(self.__current_dataset_path)
 
     def _get_obs(self):
         return {"actions": self.__actions}
@@ -41,18 +46,38 @@ class TradingEnvironment(gym.Env):
     def _get_info(self):
         return {"p/l": self.get_profit_loss(), "p/l%": self.get_profit_loss_percentage()}
 
+    def get_inputs(self):
+        stock_inputs = np.zeros((5, 5))
+        for i, action in enumerate(self.__actions):
+            stock_inputs[i] = np.array(action.to_model_array())
+
+        current_inputs = np.zeros((1, 5))  # latest price, current equity and callback
+
+        current_inputs[0][0] = float(self.__current_dataset[self.__row_index]["closed"])
+        current_inputs[0][1] = self.__current_equity.as_float()
+
+        for i in range(2, 5):
+            current_inputs[0][i] = self.__callback[i - 1]
+
+        inputs = np.concatenate([stock_inputs, current_inputs])
+        return np.array([inputs])
+
     def reset(self, seed=None, options=None):
         self.__actions.clear()
+        self.__rewards.clear()
         self.__current_equity = self.__starting_equity
         self.__next_dataset()
 
         return self._get_obs(), self._get_info()
 
-    def step(self, action, symbol=""):
+    def step(self, action, symbol=None):
         data = self.__current_dataset[self.__row_index]
 
         reward = 0
         terminated = self.__row_index == len(self.__current_dataset) - 1
+
+        if symbol is None:
+            symbol = os.path.basename(self.__current_dataset_path)
 
         if action["action"] == "buy":
             self.execute_action(TradingAction(symbol,
@@ -112,8 +137,13 @@ class TradingEnvironment(gym.Env):
     def get_profit_loss_percentage(self):
         return self.get_profit_loss() / self.__starting_equity
 
+    def set_callback(self, callback: list[float]):
+        if len(callback) != 3:
+            raise ValueError("There should only 3 callback inputs")
+        self.__callback = callback
+
     @staticmethod
-    def __parse_outputs(outputs):
+    def parse_outputs(outputs):
         result = {}
         outputs = outputs.numpy()[0][0]
 
