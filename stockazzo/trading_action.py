@@ -1,6 +1,8 @@
-from enum import Enum
 from decimal import Decimal
+from enum import Enum
+
 from stockholm import Money
+
 from utils import to_money
 
 
