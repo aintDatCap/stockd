@@ -1,6 +1,8 @@
 import os.path
 from decimal import Decimal
 from random import randrange
+import tensorflow as tf
+import math
 
 import gymnasium as gym
 import pandas as pd
@@ -53,11 +55,11 @@ class TradingEnvironment(gym.Env):
 
         current_inputs = np.zeros((1, 5))  # latest price, current equity and callback
 
-        current_inputs[0][0] = float(self.__current_dataset[self.__row_index]["closed"])
+        current_inputs[0][0] = float(self.__current_dataset.iloc[self.__row_index]["closed"])
         current_inputs[0][1] = self.__current_equity.as_float()
 
         for i in range(2, 5):
-            current_inputs[0][i] = self.__callback[i - 1]
+            current_inputs[0][i] = self.__callback[i - 2]
 
         inputs = np.concatenate([stock_inputs, current_inputs])
         return np.array([inputs])
@@ -71,7 +73,7 @@ class TradingEnvironment(gym.Env):
         return self._get_obs(), self._get_info()
 
     def step(self, action, symbol=None):
-        data = self.__current_dataset[self.__row_index]
+        data = self.__current_dataset.iloc[self.__row_index]
 
         reward = 0
         terminated = self.__row_index == len(self.__current_dataset) - 1
@@ -97,12 +99,12 @@ class TradingEnvironment(gym.Env):
 
             profit_loss_percentage = self.close_action(max_index, data["closed"])
 
-            reward = pow(profit_loss_percentage * 1000, 3)
+            reward = math.exp(profit_loss_percentage * 1000) - 1.5
             self.__rewards.append(reward)
 
         self.__row_index += 1
 
-        return self._get_obs(), reward, terminated, False, self._get_info()
+        return self._get_obs(), reward, terminated, terminated and len(self.__dataset_paths) == 0, self._get_info()
 
     def close(self):
         pass
@@ -144,19 +146,18 @@ class TradingEnvironment(gym.Env):
 
     @staticmethod
     def parse_outputs(outputs):
-        result = {}
-        outputs = outputs.numpy()[0][0]
 
-        outputs[1] = abs(outputs[1])
-        outputs[2] = abs(outputs[2])
+        outputs = outputs[0][0]
 
-        for i in range(3):
-            outputs[i] = outputs[i] / 1000
+        actions = []
+        for output in outputs:
+            actions.append(tf.math.reduce_mean(output))
 
-        result["action"] = "buy" if outputs[0] >= 1 else "sell" if outputs[0] <= -1 else "stay"
-        result["quantity"] = 0.05 if outputs[1] >= 0.05 else outputs[1]
-        result["leverage"] = 3 if outputs[2] >= 3 else 1 if outputs[2] <= 1 else outputs[2]
-        result["callback"] = outputs[3:len(outputs)]
+        actions[0] = tf.math.round(actions[0] * 2)
+        actions[2] = tf.math.round(actions[2])
+
+        result = {"action": "buy" if actions[0] == 1 else "sell" if actions[0] == 2 else "stay",
+                  "quantity": actions[1] * 0.05, "leverage": actions[2] * 2 + 1, "callback": actions[3:len(outputs)]}
 
         return result
 
