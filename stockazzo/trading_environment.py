@@ -1,13 +1,12 @@
-import math
 import os.path
 import random
 from datetime import datetime
 from enum import Enum
 from sys import float_info
 
+import dask.dataframe as dd
 import gymnasium as gym
 import numpy as np
-import pandas as pd
 from gymnasium import spaces
 from stockholm import Money, Rate
 
@@ -41,8 +40,6 @@ class TradingEnv(gym.Env):
 
         self.__borrowed_money = Money(0)
 
-        self.__intradays: list[datetime] = []
-        self.__daily_action_type: list[Action] = []  # convert it in daily action
         self.__stock = {
             "symbol": symbol,
             "qty": Rate(0),
@@ -52,12 +49,12 @@ class TradingEnv(gym.Env):
 
         self.__current_date: datetime = None
         self.__file = file
-        self.__dataframe: pd.DataFrame = pd.read_csv(self.__file)
+        self.__dataframe = dd.read_csv(self.__file)
         self.__current_row = 0
 
         # spaces
         self.action_space = spaces.MultiDiscrete(
-            np.array([len(Action), 11] + [25_000] * 5))  # 0 ... 10
+            np.array([len(Action), 11]))  # 0 ... 10
 
         self.observation_space = spaces.Dict(
             {
@@ -78,12 +75,6 @@ class TradingEnv(gym.Env):
         )
 
         self.__consequential_nothings = 0
-        self.__callback = [0] * 5
-
-    def __get_remaining_intraday(self) -> int:
-        if self.__current_equity < 26_000:
-            return 3 - len(self.__intradays)
-        return 3
 
     def __get_total_borrowable_money(self):
         return self.__current_equity * 0.8
@@ -118,7 +109,7 @@ class TradingEnv(gym.Env):
                 "avg_price_per_stock"])
 
     def __get_current_stock_price(self) -> Money:
-        return Money(self.__dataframe.iloc[self.__current_row]["Close"])
+        return Money(self.__dataframe.iloc[self.__current_row]["Price"])
 
     def __get_current_equity(self) -> Money:
         return self.__current_equity + self.__get_pl()
@@ -129,11 +120,7 @@ class TradingEnv(gym.Env):
 
     def _new_day(self, new_date: datetime) -> float:
         # self.__current_equity -= (self.__borrowed_money * 0.075) / 360
-        for i, intraday in enumerate(self.__intradays):
-            if np.busday_count(intraday.date(), new_date.date()) >= 5:
-                self.__intradays.pop(i)
 
-        self.__daily_action_type = []
         print(f"{self.__symbol} Current equity: {self.__get_current_equity()}")
         # print(self._get_obs())
         return (self.__get_current_equity() / self.__starting_equity).as_float()
@@ -154,8 +141,6 @@ class TradingEnv(gym.Env):
             successfully_borrowed = self.__borrow_money(money_to_borrow)
             if not successfully_borrowed:
                 return
-
-        self.__daily_action_type.append(Action.Buy)
 
         self.__stock["avg_price_per_stock"] = (self.__stock["avg_price_per_stock"] * self.__stock[
             "qty"] + self.__get_current_stock_price() * quantity) / (self.__stock["qty"] + quantity)
@@ -182,7 +167,6 @@ class TradingEnv(gym.Env):
             if not successfully_borrowed:
                 return
 
-        self.__daily_action_type.append(Action.Sell)
 
         self.__stock["avg_price_per_stock"] = (self.__stock["avg_price_per_stock"] * self.__stock[
             "qty"] + self.__get_current_stock_price() * quantity) / (self.__stock["qty"] + quantity)
@@ -199,12 +183,6 @@ class TradingEnv(gym.Env):
 
         if self.__get_pl_percentage() <= 0:
             return -0.1
-
-        if len(self.__daily_action_type) > 0:
-            if self.__get_remaining_intraday() <= 0:
-                return 0
-            self.__intradays.append(self.__current_date)
-            self.__daily_action_type.pop()  # self.__daily_action_type.index(Action.Buy))
 
         if self.__stock["type"] == Position.Long:
             profit = (current_stock_price - self.__stock["avg_price_per_stock"]) * quantity
@@ -226,20 +204,19 @@ class TradingEnv(gym.Env):
         dtypes = [np.float64] * 2 + [np.int32] + [np.float64] + [np.int64] + [np.float64] * 4 + [
             np.int32] * 3 + [np.int32]
         obs = {
-            "current_price_per_stock": self.__get_current_stock_price().as_float(),
-            "avg_price_per_stock": self.__stock["avg_price_per_stock"].as_float(),
-            "possessed_qty": self.__stock["qty"].as_float(),
-            "acquirable_qty": math.floor(((
-                                                  self.__get_remaining_cash() + self.__get_remaining_borrowable_money()) / self.__get_current_stock_price()).as_float()),
-            "position_type": self.__stock["type"].value,
-            "pl": self.__get_pl().as_float(),
-            "pl_percentage": self.__get_pl_percentage().as_float(),
-            "remaining_cash": self.__get_remaining_cash().as_float(),
-            "remaining_borrowable_money": self.__get_remaining_borrowable_money(),
-            "day": self.__current_date.weekday(),
-            "minute": int((self.__current_date - self.__current_date.replace(hour=9, minute=30)).total_seconds() / 60),
-            "remaining_intradays": self.__get_remaining_intraday(),
-            "callback": self.__callback
+            "price_per_stock": self.__get_current_stock_price().as_float(),
+            "williams_r": float(self.__dataframe[self.__current_row]["WilliamsR"]),
+            "donchian_channels_top": float(self.__dataframe[self.__current_row]["DonchianChannelsTop"]),
+            "donchian_channels_middle": float(self.__dataframe[self.__current_row]["DonchianChannelsMiddle"]),
+            "donchian_channels_bottom": float(self.__dataframe[self.__current_row]["DonchianChannelsBottom"]),
+            "moving_average": float(self.__dataframe[self.__current_row]["MovingAverage"]),
+            "accumulation_distribution": float(self.__dataframe[self.__current_row]["AccumulationDistribution"]),
+            "relative_strength_index": float(self.__dataframe[self.__current_row]["RelativeStrengthIndex"]),
+            "tenkan_sen": float(self.__dataframe[self.__current_row]["TenkanSen"]),
+            "kijun_sen": float(self.__dataframe[self.__current_row]["KijunSen"]),
+            "chikou_span": float(self.__dataframe[self.__current_row]["ChikouSpan"]),
+            "senkou_span_a": float(self.__dataframe[self.__current_row]["SenkokuSpanB"]),
+            "senkou_span_b": float(self.__dataframe[self.__current_row]["SenkokuSpanB"])
         }
 
         for i, key in enumerate(obs.keys()):
