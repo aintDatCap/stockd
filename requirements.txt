@@ -1,5 +1,5 @@
-stockholm>=0.5.5
-gymnasium~=0.28.1
-pandas>=2.0.3
-numpy>=1.25.0
-tensorflow~=2.12.0
+stockholm
+gymnasium
+pandas
+numpy
+dask
