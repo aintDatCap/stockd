@@ -22,3 +22,5 @@ class MultipleTradingEnvs(gym.Env):
 
     def step(self, action):
         return self.__env.step(action)
+
+gym.register("MultipleTradingEnvs-V0", MultipleTradingEnvs)
