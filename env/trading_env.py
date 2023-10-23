@@ -4,9 +4,10 @@ from enum import Enum
 import gymnasium as gym
 import numpy as np
 import pandas as pd
+import pandas_ta as ta
 from gymnasium import spaces
 from stockholm import Money, Rate
-import pandas_ta as ta
+
 from .utils import list_to_box_dict
 
 
@@ -142,9 +143,9 @@ class TradingEnv(gym.Env):
 
         row = self.__dataframe.iloc[self.__current_row]
         obs = {
-            "pls": self.__get_pl(),
-            "pl_percentage": self.__get_pl_percentage(),
-        } | row.to_dict()
+                  "pls": self.__get_pl(),
+                  "pl_percentage": self.__get_pl_percentage(),
+              } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
             obs[key] = np.array([obs[key]])  # , dtype=np.float64)

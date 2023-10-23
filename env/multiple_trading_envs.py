@@ -1,11 +1,15 @@
-import gymnasium as gym
-import dask.dataframe as dd
 from random import shuffle
+
+import dask.dataframe as dd
+import gymnasium as gym
+import pandas_ta as ta
+
+from .defaults import default_strategy
 from .trading_env import TradingEnv
 
 
 class MultipleTradingEnvs(gym.Env):
-    def __init__(self, files: list[str]):
+    def __init__(self, files: list[str], strategy: ta.Strategy = default_strategy):
         self.__partitions = []
         self.__env: TradingEnv
         for file_path in files:
