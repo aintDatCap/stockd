@@ -13,7 +13,6 @@ class MultipleTradingEnvs(gym.Env):
         self.__partitions = []
         self.__env: TradingEnv
         self._next_env()
-        self.__is_first_env = True
 
         self.__strategy = strategy
 
@@ -26,10 +25,7 @@ class MultipleTradingEnvs(gym.Env):
         shuffle(self.__partitions)
 
     def _next_env(self):
-        if self.__is_first_env:
-            self.__is_first_env = True
-        else:
-            self.__env = TradingEnv(self.__partitions.pop().compute(), self.__strategy)
+        self.__env = TradingEnv(self.__partitions.pop().compute(), self.__strategy)
 
     def reset(self, seed=None, options=None):
         self._next_env()
