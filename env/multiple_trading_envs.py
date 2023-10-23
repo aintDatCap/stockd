@@ -14,6 +14,9 @@ class MultipleTradingEnvs(gym.Env):
         self.__env: TradingEnv
         self._next_env()
         self.__is_first_env = True
+
+        self.__strategy = strategy
+
         self.action_space = self.__env.action_space
         self.observation_space = self.__env.observation_space
 
@@ -26,7 +29,7 @@ class MultipleTradingEnvs(gym.Env):
         if self.__is_first_env:
             self.__is_first_env = True
         else:
-            self.__env = TradingEnv(self.__partitions.pop().compute())
+            self.__env = TradingEnv(self.__partitions.pop().compute(), self.__strategy)
 
     def reset(self, seed=None, options=None):
         self._next_env()
