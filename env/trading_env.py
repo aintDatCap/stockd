@@ -145,7 +145,7 @@ class TradingEnv(gym.Env):
         row = self.__dataframe.iloc[self.__current_row]
         obs = {
                   "pl": self.__get_pl().as_float(),
-                  "pl_percentage": self.__get_pl_percentage().as_float(),
+                  "pl_percent": self.__get_pl_percentage().as_float(),
               } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
