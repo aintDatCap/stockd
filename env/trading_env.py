@@ -1,12 +1,13 @@
 import random
 from enum import Enum
-from sys import float_info
 
 import gymnasium as gym
 import numpy as np
 import pandas as pd
 from gymnasium import spaces
 from stockholm import Money, Rate
+import pandas_ta as ta
+from .utils import list_to_box_dict
 
 
 class Action(Enum):
@@ -29,9 +30,9 @@ class Position(Enum):
 class TradingEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, dataframe: pd.DataFrame):
+    def __init__(self, dataframe: pd.DataFrame, strategy: ta.Strategy):
 
-        self.__starting_equity = Money(random.randrange(1000, 3000))
+        self.__starting_equity = Money(random.randrange(1000, 1500))
         print(f"Starting with {self.__starting_equity}$")
 
         self.__current_equity = self.__starting_equity
@@ -45,30 +46,19 @@ class TradingEnv(gym.Env):
         }
 
         self.__dataframe = dataframe  # pd.read_csv(self.__file)
+        self.__dataframe.ta.strategy(strategy)
         self.__current_row = 0
 
         # spaces
         self.action_space = spaces.MultiDiscrete(
-            np.array([len(Action)]))  # 0 ... 10
+            np.array([len(Action)]))  # 0, 1 and 2
 
+        self.indicators = strategy.ta
         self.observation_space = spaces.Dict(
             {
-                "open": spaces.Box(0, float_info.max, dtype=float),
-                "high": spaces.Box(0, float_info.max, dtype=float),
-                "low": spaces.Box(0, float_info.max, dtype=float),
-                "close": spaces.Box(0, float_info.max, dtype=float),
-                "volume": spaces.Box(0, float_info.max, dtype=float),
-                "pl_percentage": spaces.Box(-1, float_info.max, dtype=float),
-                "sma": spaces.Box(0, float_info.max, dtype=float),
-                "williams_r": spaces.Box(-100, 0, dtype=float),
-                "upper_bbands": spaces.Box(0, float_info.max, dtype=float),
-                "middle_bbands": spaces.Box(0, float_info.max, dtype=float),
-                "lower_bbands": spaces.Box(0, float_info.max, dtype=float),
-                "avrg_true_range": spaces.Box(0, 1, dtype=float),
-                "money_flow_idx": spaces.Box(0, 100, dtype=float),
-                "rsi": spaces.Box(0, 100, dtype=float),
-                "a/d": spaces.Box(0, float_info.max, dtype=float),
-            }
+                "pl": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float64),
+                "pl_percent": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float64),
+            } | list_to_box_dict(list(self.__dataframe.columns))
         )
 
         self.__consequential_nothings = 0
@@ -149,30 +139,15 @@ class TradingEnv(gym.Env):
         return pl_percentage.as_float() * 100
 
     def _get_obs(self):
-        dtypes = [np.float64] * 15
 
         row = self.__dataframe.iloc[self.__current_row]
         obs = {
-            "open": float(row["open"]),
-            "high": float(row["high"]),
-            "low": float(row["low"]),
-            "close": self.__get_current_stock_price().as_float(),
-            "volume": float(row["volume"]),
+            "pls": self.__get_pl(),
             "pl_percentage": self.__get_pl_percentage(),
-            "sma": float(row["sma"]),
-            "williams_r": float(row["williams_r"]),
-            "upper_bbands": float(row["upper_bbands"]),
-            "middle_bbands": float(row["middle_bbands"]),
-            "lower_bbands": float(row["lower_bbands"]),
-            "avrg_true_range": float(row["avrg_true_range"]),
-            "money_flow_idx": float(row["money_flow_idx"]),
-            "rsi": float(row["rsi"]),
-            "a/d": float(row["a/d"]),
-
-        }
+        } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
-            obs[key] = np.array([obs[key]], dtype=dtypes[i])
+            obs[key] = np.array([obs[key]])  # , dtype=np.float64)
         return obs
 
     def _get_info(self):

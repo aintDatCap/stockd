@@ -1,6 +1,8 @@
 from stockholm import Money
 import pandas_ta as ta
-import pandas as pd
+import numpy as np
+from gymnasium.spaces import Box
+
 
 def to_money(value) -> Money:
     if not isinstance(value, Money):
@@ -8,5 +10,20 @@ def to_money(value) -> Money:
     return value
 
 
-def generate_ta(df: pd.DataFrame):
-    df.ta.sma(length=15)
+def strategy_to_dict(strategy: ta.Strategy) -> dict[str, Box]:
+    result = {}
+    indicators = sorted(strategy.ta, key=lambda x: x["kind"])
+
+    for i, indicator in enumerate(indicators):
+        result[f"{indicator['kind']}_{i}"] = Box(low=-np.inf, high=np.inf, dtype=np.float64)
+
+    return result
+
+
+def list_to_box_dict(elements: list[str]) -> dict[str, Box]:
+    result = {}
+
+    for element in elements:
+        result[element] = Box(low=-np.inf, high=np.inf, dtype=np.float64)
+
+    return result
