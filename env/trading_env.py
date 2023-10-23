@@ -144,12 +144,12 @@ class TradingEnv(gym.Env):
 
         row = self.__dataframe.iloc[self.__current_row]
         obs = {
-                  "pls": self.__get_pl(),
-                  "pl_percentage": self.__get_pl_percentage(),
+                  "pls": self.__get_pl().as_float(),
+                  "pl_percentage": self.__get_pl_percentage().as_float(),
               } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
-            obs[key] = np.array([obs[key]])  # , dtype=np.float64)
+            obs[key] = np.array([obs[key]], dtype=np.float64)
         return obs
 
     def _get_info(self):
