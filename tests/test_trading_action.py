@@ -1,6 +1,6 @@
 import unittest
 from decimal import Decimal
-from stockazzo import TradingAction
+from env import TradingAction
 
 
 class TestTradingAction(unittest.TestCase):
