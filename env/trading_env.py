@@ -48,6 +48,7 @@ class TradingEnv(gym.Env):
 
         self.__dataframe = dataframe  # pd.read_csv(self.__file)
         self.__dataframe.ta.strategy(strategy)
+        self.__dataframe = self.__dataframe.dropna(how="any", axis=0)
         self.__current_row = 0
 
         # spaces
