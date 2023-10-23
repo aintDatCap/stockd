@@ -16,10 +16,12 @@ class MultipleTradingEnvs(gym.Env):
 
         shuffle(self.__partitions)
 
+        self.__strategy = strategy
+
         self.__env: TradingEnv
         self._next_env()
 
-        self.__strategy = strategy
+
 
         self.action_space = self.__env.action_space
         self.observation_space = self.__env.observation_space
