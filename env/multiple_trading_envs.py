@@ -11,6 +11,12 @@ from .trading_env import TradingEnv
 class MultipleTradingEnvs(gym.Env):
     def __init__(self, files: list[str], strategy: ta.Strategy = default_strategy):
         self.__partitions = []
+        for file_path in files:
+            self.__partitions.append(dd.read_csv(file_path).partitions)
+
+        shuffle(self.__partitions)
+        del files
+
         self.__env: TradingEnv
         self._next_env()
 
@@ -18,11 +24,6 @@ class MultipleTradingEnvs(gym.Env):
 
         self.action_space = self.__env.action_space
         self.observation_space = self.__env.observation_space
-
-        for file_path in files:
-            self.__partitions.append(dd.read_csv(file_path).partitions)
-
-        shuffle(self.__partitions)
 
     def _next_env(self):
         self.__env = TradingEnv(self.__partitions.pop().compute(), self.__strategy)
