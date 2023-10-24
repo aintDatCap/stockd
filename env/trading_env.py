@@ -52,8 +52,7 @@ class TradingEnv(gym.Env):
         self.__current_row = 0
 
         # spaces
-        self.action_space = spaces.MultiDiscrete(
-            np.array([len(Action)]))  # 0, 1 and 2
+        self.action_space = spaces.Discrete(len(Action))  # 0, 1 and 2
 
         self.indicators = strategy.ta
         self.observation_space = spaces.Dict(
@@ -174,8 +173,7 @@ class TradingEnv(gym.Env):
         return self._get_obs(), self._get_info()
 
     def step(self, action):
-
-        _action = Action(action[0])
+        action = Action(action)
 
         if self.__get_current_equity() <= 0:
             print("Early quitting")
@@ -183,20 +181,20 @@ class TradingEnv(gym.Env):
 
         reward = .0
 
-        if _action == Action.Nothing:
+        if action == Action.Nothing:
             self.__consequential_nothings += 1
             if self.__consequential_nothings >= 390 * 20:  # 20 days
                 reward -= 0.1
         else:
             self.__consequential_nothings = 0
 
-        if _action == Action.Buy:
+        if action == Action.Buy:
             if self.__stock["type"] == Position.Short and self.__stock["qty"] != 0:
                 reward += self._close_positions()
             else:
                 self._buy(Rate(0.02))
 
-        elif _action == Action.Sell:
+        elif action == Action.Sell:
             if self.__stock["type"] == Position.Long and self.__stock["qty"] != 0:
                 reward += self._close_positions()
             else:
