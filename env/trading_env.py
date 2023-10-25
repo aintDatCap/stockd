@@ -148,7 +148,7 @@ class TradingEnv(gym.Env):
         obs = {
                   "pl": self.__get_pl().as_float(),
                   "pl_percent": self.__get_pl_percentage().as_float(),
-                  "position_type": self.__stock["type"].value(),
+                  "position_type": self.__stock["type"],
               } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
