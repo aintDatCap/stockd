@@ -165,7 +165,7 @@ class TradingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-
+        self.__current_equity = self.__starting_equity
         self.__current_row = 0
         self.__stock = {
             "qty": Rate(0),
