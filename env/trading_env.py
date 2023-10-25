@@ -22,7 +22,8 @@ class Action(Enum):
 
 class Position(Enum):
     Long = 0
-    Short = 0
+    Short = 1
+    Null = 2
 
     def opposite(self):
         return Position.Long if self == Position.Short else Position.Short
@@ -134,7 +135,7 @@ class TradingEnv(gym.Env):
         self.__stock = {
             "qty": Rate(0),
             "avg_price_per_stock": Money(0),
-            "type": Position.Short,
+            "type": Position.Null,
             "leverage": Rate(0)
         }
         return pl_percentage.as_float() * 100
@@ -166,7 +167,7 @@ class TradingEnv(gym.Env):
         self.__stock = {
             "qty": Rate(0),
             "avg_price_per_stock": Money(0),
-            "type": Position.Short,
+            "type": Position.Null,
             "leverage": Rate(0)
         }
 
