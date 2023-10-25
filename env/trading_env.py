@@ -172,7 +172,7 @@ class TradingEnv(gym.Env):
             "type": Position.Null,
             "leverage": Rate(0)
         }
-
+        print("reset() called")
         return self._get_obs(), self._get_info()
 
     def step(self, action):
