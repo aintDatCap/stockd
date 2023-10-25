@@ -180,25 +180,28 @@ class TradingEnv(gym.Env):
             return self._get_obs(), -10, True, True, self._get_info()
 
         reward = .0
-
+        """
         if action == Action.Nothing:
             self.__consequential_nothings += 1
             if self.__consequential_nothings >= 390 * 20:  # 20 days
                 reward -= 0.1
         else:
             self.__consequential_nothings = 0
+        """
 
         if action == Action.Buy:
             if self.__stock["type"] == Position.Short and self.__stock["qty"] != 0:
                 reward += self._close_positions()
             else:
                 self._buy(Rate(0.02))
+                reward = 1
 
         elif action == Action.Sell:
             if self.__stock["type"] == Position.Long and self.__stock["qty"] != 0:
                 reward += self._close_positions()
             else:
                 self._sell(Rate(0.02))
+                reward = 1
 
         self.__current_row += 1
         terminated = self.__current_row == len(self.__dataframe.index) - 1
