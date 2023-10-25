@@ -21,9 +21,10 @@ class Action(Enum):
 
 
 class Position(Enum):
-    Long = 0
-    Short = 1
-    Null = 2
+    Null = 0
+    Long = 1
+    Short = 2
+
 
     def opposite(self):
         return Position.Long if self == Position.Short else Position.Short
@@ -60,6 +61,7 @@ class TradingEnv(gym.Env):
             {
                 "pl": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float64),
                 "pl_percent": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float64),
+                "position_type": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float64),
             } | list_to_box_dict(list(self.__dataframe.columns))
         )
 
@@ -146,6 +148,7 @@ class TradingEnv(gym.Env):
         obs = {
                   "pl": self.__get_pl().as_float(),
                   "pl_percent": self.__get_pl_percentage().as_float(),
+                  "position_type": self.__stock["type"].value(),
               } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
