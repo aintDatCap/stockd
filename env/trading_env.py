@@ -194,26 +194,28 @@ class TradingEnv(gym.Env):
         """
 
         if self.__get_pl_percentage() <= -0.3:
-            self._close_positions()
+            reward += self._close_positions()
 
         if action == Action.Buy:
             if self.__stock["type"] == Position.Short and self.__stock["qty"] != 0:
                 reward += self._close_positions()
             else:
                 self._buy(Rate(0.02))
-                reward = 0.2
+                reward += 0.2
 
         elif action == Action.Sell:
             if self.__stock["type"] == Position.Long and self.__stock["qty"] != 0:
                 reward += self._close_positions()
             else:
                 self._sell(Rate(0.02))
-                reward = 0.2
+                reward += 0.2
 
         self.__current_row += 1
         terminated = self.__current_row == len(self.__dataframe.index) - 1
         if terminated:
             print(f"Start: {self.__starting_equity}$, end: {self.__get_current_equity()}$")
+
+        reward += self._close_positions()
 
         return self._get_obs(), reward, terminated, False, self._get_info()
 
