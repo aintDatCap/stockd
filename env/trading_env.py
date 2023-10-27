@@ -139,7 +139,7 @@ class TradingEnv(gym.Env):
             "type": Position.Null,
             "leverage": Rate(0)
         }
-        print(f"{'+' if pl_percentage >= 0 else '-'}{pl_percentage*100}%")
+        print(f"{'+' if pl_percentage >= 0 else ''}{pl_percentage*100}%")
         return pl_percentage.as_float() * 100
 
     def _get_obs(self):
