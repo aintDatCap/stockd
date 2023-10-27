@@ -70,7 +70,7 @@ class TradingEnv(gym.Env):
         return self.__current_equity * 0.8
 
     def __get_pl(self) -> Money:
-        if self.__stock["qty"] == 0:
+        if self.__stock["qty"] == 0 or self.__stock["type"] == Position.Null:
             return Money(0)
         if self.__stock["type"] == Position.Long:
             return (self.__get_current_stock_price() - self.__stock["avg_price_per_stock"]) * self.__stock["qty"] * \
@@ -80,7 +80,7 @@ class TradingEnv(gym.Env):
                 self.__stock["leverage"]
 
     def __get_pl_percentage(self) -> Rate:
-        if self.__stock["qty"] == 0:
+        if self.__stock["qty"] == 0 or self.__stock["type"] == Position.Null:
             return Rate(0)
         if self.__stock["type"] == Position.Long:
             return Rate((self.__get_current_stock_price() - self.__stock["avg_price_per_stock"]) / self.__stock[
