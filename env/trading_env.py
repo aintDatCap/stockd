@@ -193,6 +193,9 @@ class TradingEnv(gym.Env):
             self.__consequential_nothings = 0
         """
 
+        if self.__get_pl_percentage() <= -0.3:
+            self._close_positions()
+
         if action == Action.Buy:
             if self.__stock["type"] == Position.Short and self.__stock["qty"] != 0:
                 reward += self._close_positions()
