@@ -215,7 +215,7 @@ class TradingEnv(gym.Env):
         if terminated:
             print(f"Start: {self.__starting_equity}$, end: {self.__get_current_equity()}$")
 
-        reward += self._close_positions()
+            reward += self._close_positions()
 
         return self._get_obs(), reward, terminated, False, self._get_info()
 
