@@ -10,7 +10,7 @@ from .trading_env import TradingEnv
 
 class MultipleTradingEnvs(gym.Env):
     def __init__(self, files: list[str], strategy: ta.Strategy = default_strategy):
-        self.__partitions = []
+        self.__partitions:list[dd.DataFrame] = []
         for file_path in files:
             self.__partitions.extend(dd.read_csv(file_path, dtype={'volume': 'float64'})
                                      .repartition(npartitions=30)
@@ -30,12 +30,12 @@ class MultipleTradingEnvs(gym.Env):
     def _next_env(self):
         self.__env = TradingEnv(self.__partitions.pop().compute(), self.__strategy)
 
+    def get_total_steps(self):
+        return sum([len(partition) for partition in self.__partitions]) - 180 * len(self.__partitions)
+
     def reset(self, seed=None, options=None):
         self._next_env()
         return self.__env.reset()
 
     def step(self, action):
         return self.__env.step(action)
-
-
-gym.register("MultipleTradingEnvs-V0", MultipleTradingEnvs)
