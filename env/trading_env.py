@@ -211,10 +211,10 @@ class TradingEnv(gym.Env):
                     reward += 0.2
 
             self.__current_row += 1
-            terminated = self.__current_row == len(self.__dataframe.index) - 1
-            if terminated:
-                reward += self._close_positions()
-                print(f"Start: {self.__starting_equity}$, end: {self.__get_current_equity()}$")
+        terminated = self.__current_row == len(self.__dataframe.index) - 1
+        if terminated:
+            reward += self._close_positions()
+            print(f"Start: {self.__starting_equity}$, end: {self.__get_current_equity()}$")
 
         return self._get_obs(), reward, terminated, False, self._get_info()
 
