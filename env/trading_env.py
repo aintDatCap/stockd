@@ -44,7 +44,7 @@ class TradingEnv(gym.Env):
             "qty": Rate(0),
             "avg_price_per_stock": Money(0),
             "type": Position.Short,
-            "leverage": Rate(0)
+            "leverage": Rate(30)
         }
 
         self.__dataframe = dataframe  # pd.read_csv(self.__file)
@@ -137,7 +137,7 @@ class TradingEnv(gym.Env):
             "qty": Rate(0),
             "avg_price_per_stock": Money(0),
             "type": Position.Null,
-            "leverage": Rate(0)
+            "leverage": Rate(30)
         }
         print(f"{'+' if pl_percentage >= 0 else ''}{pl_percentage*100}%")
         return pl_percentage.as_float() * 100
