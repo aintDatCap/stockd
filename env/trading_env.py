@@ -66,9 +66,6 @@ class TradingEnv(gym.Env):
 
         self.__consequential_nothings = 0
 
-    def __get_total_borrowable_money(self):
-        return self.__current_equity * 0.8
-
     def __get_pl(self) -> Money:
         if self.__stock["qty"] == 0 or self.__stock["type"] == Position.Null:
             return Money(0)
@@ -79,7 +76,7 @@ class TradingEnv(gym.Env):
             return (self.__stock["avg_price_per_stock"] - self.__get_current_stock_price()) * self.__stock["qty"] * \
                 self.__stock["leverage"]
 
-    def __get_pl_percentage(self) -> Rate:
+    def __get_pl_rate(self) -> Rate:
         if self.__stock["qty"] == 0 or self.__stock["type"] == Position.Null:
             return Rate(0)
         if self.__stock["type"] == Position.Long:
@@ -125,7 +122,7 @@ class TradingEnv(gym.Env):
         if self.__stock["qty"] == 0:
             return 0
 
-        pl_percentage = self.__get_pl_percentage()
+        pl_percentage = self.__get_pl_rate()
 
         profit = self.__get_pl()
 
@@ -147,7 +144,7 @@ class TradingEnv(gym.Env):
         row = self.__dataframe.iloc[self.__current_row]
         obs = {
                   "pl": self.__get_pl().as_float(),
-                  "pl_percent": self.__get_pl_percentage().as_float(),
+                  "pl_percent": self.__get_pl_rate().as_float(),
                   "position_type": self.__stock["type"].value,
               } | row.to_dict()
 
@@ -193,7 +190,7 @@ class TradingEnv(gym.Env):
             self.__consequential_nothings = 0
         """
 
-        if self.__get_pl_percentage() <= -0.3:
+        if self.__get_pl_rate() <= -0.3:
             reward += self._close_positions()
         else:
             if action == Action.Buy:
