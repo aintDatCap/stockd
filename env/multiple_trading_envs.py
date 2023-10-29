@@ -33,7 +33,7 @@ class MultipleTradingEnvs(gym.Env):
     def get_total_steps(self):
         total = 0
         for partition in self.__partitions:
-            total += len(partition.index)
+            total += partition.size[0]
         return total - 180 * len(self.__partitions)
 
     def reset(self, seed=None, options=None):
