@@ -31,7 +31,7 @@ class MultipleTradingEnvs(gym.Env):
         self.__env = TradingEnv(self.__partitions.pop().compute(), self.__strategy)
 
     def get_total_steps(self):
-        return sum([len(partition) for partition in self.__partitions]) - 180 * len(self.__partitions)
+        return sum([len(partition.index) for partition in self.__partitions]) - 180 * len(self.__partitions)
 
     def reset(self, seed=None, options=None):
         self._next_env()
