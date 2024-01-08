@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 
-setup(name='env',
+setup(name='stockd',
       version='0.1-alpha',
       description='A library to simulate a trading environment',
       author='Federico Caprini',
