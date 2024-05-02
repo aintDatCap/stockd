@@ -1,6 +1,5 @@
 import random
 from enum import Enum
-import mariadb
 import gymnasium as gym
 import numpy as np
 import pandas as pd

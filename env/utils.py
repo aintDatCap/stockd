@@ -2,8 +2,6 @@ import numpy as np
 import pandas_ta as ta
 from gymnasium.spaces import Box
 from stockholm import Money
-import os
-import csv
 
 def to_money(value) -> Money:
     if not isinstance(value, Money):
