@@ -1,6 +1,6 @@
 import random
 from enum import Enum
-
+import mariadb
 import gymnasium as gym
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ from gymnasium import spaces
 from stockholm import Money, Rate
 
 from .utils import list_to_box_dict
-
+from .data_source import TradingDataSource
 
 class Action(Enum):
     Nothing = 0
@@ -32,7 +32,7 @@ class Position(Enum):
 class TradingEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, dataframe: pd.DataFrame, strategy: ta.Strategy):
+    def __init__(self, data_source: TradingDataSource, strategy: ta.Strategy):
 
         self.__starting_equity = Money(random.randrange(1000, 1500))
         print(f"Starting with {self.__starting_equity}$")
@@ -47,7 +47,7 @@ class TradingEnv(gym.Env):
             "leverage": Rate(30)
         }
 
-        self.__dataframe = dataframe  # pd.read_csv(self.__file)
+        self.__data_source = data_source
         self.__dataframe.ta.strategy(strategy)
         self.__dataframe = self.__dataframe.dropna(how="any", axis=0)
         self.__current_row = 0
@@ -63,8 +63,6 @@ class TradingEnv(gym.Env):
                 "position_type": spaces.Box(low=-np.inf, high=np.inf, dtype=np.float64),
             } | list_to_box_dict(list(self.__dataframe.columns))
         )
-
-        self.__consequential_nothings = 0
 
     def __get_pl(self) -> Money:
         if self.__stock["qty"] == 0 or self.__stock["type"] == Position.Null:
@@ -143,9 +141,9 @@ class TradingEnv(gym.Env):
 
         row = self.__dataframe.iloc[self.__current_row]
         obs = {
-                  "pl": self.__get_pl().as_float(),
-                  "pl_percent": self.__get_pl_rate().as_float(),
-                  "position_type": self.__stock["type"].value,
+                  "pl": 0 if self.__stock["qty"] == 0 else self.__get_pl().as_float(),
+                  "pl_percent": 0 if self.__stock["qty"] == 0 else self.__get_pl_rate().as_float(),
+                  "position_type": Position.Null if self.__stock["qty"] == 0 else self.__stock["type"].value,
               } | row.to_dict()
 
         for i, key in enumerate(obs.keys()):
@@ -162,6 +160,8 @@ class TradingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+
+        self.__dataframe = self.__data_source.next_data_batch()
         self.__current_equity = self.__starting_equity
         self.__current_row = 0
         self.__stock = {
@@ -181,15 +181,8 @@ class TradingEnv(gym.Env):
             return self._get_obs(), -10, True, True, self._get_info()
 
         reward = .0
-        """
-        if action == Action.Nothing:
-            self.__consequential_nothings += 1
-            if self.__consequential_nothings >= 390 * 20:  # 20 days
-                reward -= 0.1
-        else:
-            self.__consequential_nothings = 0
-        """
 
+        # In case 30% of the value was lost
         if self.__get_pl_rate() <= -0.3:
             reward += self._close_positions()
         else:

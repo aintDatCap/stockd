@@ -1,3 +1,3 @@
 from .defaults import *
-from .multiple_trading_envs import MultipleTradingEnvs
+from .data_source import TradingDataSource
 from .trading_env import *
