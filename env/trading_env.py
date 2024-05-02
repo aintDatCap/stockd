@@ -2,7 +2,6 @@ import random
 from enum import Enum
 import gymnasium as gym
 import numpy as np
-import pandas as pd
 import pandas_ta as ta
 from gymnasium import spaces
 from stockholm import Money, Rate
@@ -47,12 +46,13 @@ class TradingEnv(gym.Env):
         }
 
         self.__data_source = data_source
-        
+        self.__strategy = strategy
+
         self.__dataframe = self.__data_source.next_data_batch()
         self.__dataframe.ta.strategy(self.__strategy)
         self.__dataframe = self.__dataframe.dropna(how="any", axis=0)
 
-        self.__strategy = strategy
+        
         self.__current_row = 0
 
         # spaces
