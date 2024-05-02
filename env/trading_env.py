@@ -47,6 +47,11 @@ class TradingEnv(gym.Env):
         }
 
         self.__data_source = data_source
+        
+        self.__dataframe = self.__data_source.next_data_batch()
+        self.__dataframe.ta.strategy(self.__strategy)
+        self.__dataframe = self.__dataframe.dropna(how="any", axis=0)
+
         self.__strategy = strategy
         self.__current_row = 0
 
