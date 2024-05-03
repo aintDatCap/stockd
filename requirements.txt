@@ -2,4 +2,4 @@ stockholm
 gymnasium
 pandas
 numpy
-pandas-ta
+pandas_ta

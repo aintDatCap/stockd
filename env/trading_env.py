@@ -9,6 +9,7 @@ from stockholm import Money, Rate
 from .utils import list_to_box_dict
 from .data_source import TradingDataSource
 
+
 class Action(Enum):
     Nothing = 0
     Sell = 1
@@ -30,7 +31,7 @@ class Position(Enum):
 class TradingEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, data_source: TradingDataSource, strategy: ta.Strategy):
+    def __init__(self, data_source: TradingDataSource, strategy: ta.Strategy = None):
 
         self.__starting_equity = Money(random.randrange(1000, 1500))
         print(f"Starting with {self.__starting_equity}$")
@@ -46,13 +47,15 @@ class TradingEnv(gym.Env):
         }
 
         self.__data_source = data_source
-        self.__strategy = strategy
+        self.__strategy = strategy if strategy is not None else ta.AllStrategy
 
         self.__dataframe = self.__data_source.next_data_batch()
+        if self.__dataframe is None:
+            raise RuntimeError("The data source couldn't produce a single data batch")
+
         self.__dataframe.ta.strategy(self.__strategy)
         self.__dataframe = self.__dataframe.dropna(how="any", axis=0)
 
-        
         self.__current_row = 0
 
         # spaces
@@ -137,7 +140,7 @@ class TradingEnv(gym.Env):
             "type": Position.Null,
             "leverage": Rate(30)
         }
-        print(f"{'+' if pl_percentage >= 0 else ''}{pl_percentage*100}%")
+        print(f"{'+' if pl_percentage >= 0 else ''}{pl_percentage * 100}%")
         return pl_percentage.as_float() * 100
 
     def _get_obs(self):
