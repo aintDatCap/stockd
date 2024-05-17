@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='stockd',
       version='0.1-alpha',
@@ -13,6 +13,5 @@ setup(name='stockd',
                         "gymnasium",
                         "pandas",
                         "numpy",
-                        "dask",
                         "pandas-ta"],
       )
